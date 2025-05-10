@@ -47,7 +47,8 @@ class FiveStageInorderCore():
     s.rf_s = [None                       for _ in range(32)]
 
     # MIPS32 and RISC-V(?)
-    s.rf[0] = 0x00000000
+    s.rf[ 0] = 0x00000000
+    s.rf[29] = 0x80000000
 
     # Forwarding Network
     s.forwarding_network = {}

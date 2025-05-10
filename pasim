@@ -1,0 +1,152 @@
+#!/usr/bin/env python3
+#=====================================================================
+# pyArchSim
+#=====================================================================
+#   A very light cycle-level Microarchitecture Simulator.
+#
+# Author\ Khalid Al-Hawaj
+# Date  \ 26 April 2025
+
+#--------------------
+# Modify Import Path
+#--------------------
+
+# Modify Python path
+import argparse
+import os
+import sys
+
+# Constants
+ROOT_INDICATOR = '.__PYTHON_ROOT__'
+
+root_dir = os.path.dirname(os.path.abspath(__file__))
+while root_dir and root_dir != '/':
+  if os.path.exists(os.path.join(root_dir, ROOT_INDICATOR)):
+    sys.path.insert(0, root_dir)
+    break
+  root_dir = os.path.dirname(root_dir)
+
+if not os.path.exists(os.path.join(root_dir, ROOT_INDICATOR)):
+  print('ERROR: Cannot find the Python root')
+else:
+  print('INFO: Set root_dir to "{}"'.format(root_dir))
+
+
+#--------------------
+# Imports from pyArchSim
+#--------------------
+
+from pyArchSimLib.arch.isa import mips32
+from pyArchSimLib.arch     import assembler
+from pyArchSimLib.system   import BasicSystem
+
+# Setup argument parser
+parser = argparse.ArgumentParser(
+           prog='pasim',
+           description='Python-based Educaitonal Architectural Simulator',
+           epilog='By Khalid Al-Hawaj'
+         )
+
+parser.add_argument('asm_file')
+parser.add_argument('-m', '--max-num-cycles', type=int, default=1000000)
+parser.add_argument('-l', '--linetrace', action='store_true')
+parser.add_argument('-f', '--linetrace-file', type=str)
+
+# Parse the arguments
+args = parser.parse_args()
+
+# Linetracing
+ltEnable   = args.linetrace
+ltFilename = args.linetrace_file
+ltFile     = None
+
+if ltFilename: ltFile = open(ltFilename, 'w')
+
+# System and assembler
+assemblerObj = assembler(mips32)
+system       = BasicSystem(ltEnable)
+
+# Open the assembly file
+asmFilename = args.asm_file
+with open(asmFilename, 'r') as file:
+    raw_asm = file.readlines()
+
+elf = assemblerObj.assemble(raw_asm)
+system.loader(elf)
+
+max_num_cycle = args.max_num_cycles
+cycle         = 0
+
+tot_num_cycle = 0
+tot_num_insts = 0
+
+roi_num_cycle = 0
+roi_num_insts = 0
+
+# Print header
+# hawajkm: we need a better way to do this
+top = '+----------+------------+----------+----------+----------+----------+----------+-----+\n'
+mid = '| Cycle    | Fetch      | Decode   | Execute  | Memory   | Complete |          | Mem |\n'
+bot = '+----------+------------+----------+----------+----------+----------+----------+-----+\n'
+
+if ltEnable:
+  if   ltFile:
+    ltFile.write(top)
+    ltFile.write(mid)
+    ltFile.write(bot)
+  else:
+    print(top, end='')
+    print(mid, end='')
+    print(bot, end='')
+
+while cycle < max_num_cycle:
+  # Check stats before ticking
+  # hawajkm: again, we need to eliminate combinational propagation.
+  #          my idea is to just double-buffer! Version 2.00 will
+  #          include signal-level double-buffering.
+
+  # If ROI
+  isROI = system.roiFlag()
+
+  system.tick()
+  linetrace = system.linetrace()
+
+  if isROI:
+    roi_num_cycle += 1
+    if system.instCompletionFlag():
+      roi_num_insts += 1
+
+  tot_num_cycle += 1
+  if system.instCompletionFlag():
+    tot_num_insts += 1
+  
+  # Linetracing
+  if ltEnable:
+    lt_entry = '{: >10d} | {}\n'.format(cycle, linetrace)
+
+    if   ltFile: ltFile.write(lt_entry)
+    else       : print(lt_entry, end='')
+
+  # Exit Status
+  exit_cond, exit_status = system.getExitStatus()
+
+  if exit_cond:
+    print('')
+    print(' + Overall Total Statistics:')
+    print('     - Total Number of Cycles = {}'.format(tot_num_cycle))
+    print('     - Total Number of Completed Instructions = {}'.format(tot_num_insts))
+    print('     - Average IPC = {:.2f}'.format(tot_num_insts / tot_num_cycle))
+    print('     - Average CPI = {:.2f}'.format(tot_num_cycle / tot_num_insts))
+    print('')
+    if roi_num_cycle > 0:
+      print(' + ROI Statistics:')
+      print('     - ROI Number of Cycles = {}'.format(roi_num_cycle))
+      print('     - ROI Number of Completed Instructions = {}'.format(roi_num_insts))
+      print('     - ROI Average IPC = {:.2f}'.format(roi_num_insts / roi_num_cycle))
+      print('     - ROI Average CPI = {:.2f}'.format(roi_num_cycle / roi_num_insts))
+      print('')
+
+    break
+
+  # Advance
+  cycle += 1

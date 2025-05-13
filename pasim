@@ -43,7 +43,7 @@ from pyArchSimLib.system   import BasicSystem
 # Setup argument parser
 parser = argparse.ArgumentParser(
            prog='pasim',
-           description='Python-based Educaitonal Architectural Simulator',
+           description='An Educational Architectural Simulator Written in Python',
            epilog='By Khalid Al-Hawaj'
          )
 

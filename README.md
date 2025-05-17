@@ -1,6 +1,5 @@
 # pyArchSim
 By\ Khalid Al-Hawaj
-___
 
 This is the repository for pyArchSim. In here, you should be able to get all Python code for the simulator alongside some examples.
 

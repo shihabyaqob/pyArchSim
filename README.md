@@ -165,11 +165,11 @@ The pyArchSim utilizes classes to represent each block in above figure. As long 
 
 The default stracture of pyArchSim is as follows:
 
-1. **System (Python package: `pyArchSim.system`):** the overall system representing a processor, main memory, and a kernel.
-2. **Proc (Python package: `pyArchSim.proc`):** the processor model which includes the core and the uncore.
-3. **Main Memory (Python package: `pyArchSim.mem.main`):** the main memory model.
-4. **Core (Python package: `pyArchSim.core`):** the core part of the processor, which handles the execution.
-5. **icache/dcache (Python package: `pyArchSim.mem.cache`):** model for caches to alleviate memory latency.
+1. **System (Python package: `pyArchSimLib.system`):** the overall system representing a processor, main memory, and a kernel.
+2. **Proc (Python package: `pyArchSimLib.proc`):** the processor model which includes the core and the uncore.
+3. **Main Memory (Python package: `pyArchSimLib.mem.main`):** the main memory model.
+4. **Core (Python package: `pyArchSimLib.core`):** the core part of the processor, which handles the execution.
+5. **icache/dcache (Python package: `pyArchSimLib.mem.cache`):** model for caches to alleviate memory latency.
 
 In the following subsections, the default model and the interfaces between the different classes are explained verbosely.
 
@@ -190,7 +190,7 @@ The system instantiates the processor, main memory, and the kernel. These subcom
 4. **`roiFlag()`**: A function to return whether the tick/cycle is considered to be within a region-of-interest (ROI) segment of the execution. The function is often a pass-through to the same interface funtion in the processor object.
 5. **`instCompletionFlag()`**: A function to return whether an instruction was completed/committed in a given cycle/tick. The function is often a pass-through to the same interface funtion in the processor object.
 
-The default class included in pyArchSim is "`pyArchSim.systen.BasicSystem`". The default class instantiates two default classes for the process and main memory: "`pyArchSim.proc.FiveStageInorderProcessor`" and "`pyArch.mem.main.SimpleMultiportedMemory`", respectively.
+The default class included in pyArchSim is "`pyArchSimLib.systen.BasicSystem`". The default class instantiates two default classes for the process and main memory: "`pyArchSimLib.proc.FiveStageInorderProcessor`" and "`pyArch.mem.main.SimpleMultiportedMemory`", respectively.
 
 #### 2.2.1 Processor
 
@@ -214,11 +214,11 @@ Interfacing functions used to handle syscall emulation:
 1. **`setMemReadFunct(MemReadFunct)`**: A function that enables syscall emulation code to read from the memory without adhering to the cycle-level approximate model.
 2. **`setMemWriteFunct(MemWriteFunct)`**: A function that enables syscall emulation code to write to the memory without adhering to the cycle-level approximate model.
 
-The default class for the processor in pyArchSim is "`pyArchSim.proc.FiveStageInorderProcessor`". The default processor insantiates the following for the subcomponents: "`pyArchSim.proc.core.FiveStageInorderCore`" for the core, and two caches of class "`pyArchSim.mem.cache.NoCache`". The two caches are: the icache, which is used for the instruction port; and the dacache, which is used for the data port.
+The default class for the processor in pyArchSim is "`pyArchSimLib.proc.FiveStageInorderProcessor`". The default processor insantiates the following for the subcomponents: "`pyArchSimLib.proc.core.FiveStageInorderCore`" for the core, and two caches of class "`pyArchSimLib.mem.cache.NoCache`". The two caches are: the icache, which is used for the instruction port; and the dacache, which is used for the data port.
 
 #### 2.2.1.1 Core
 
-The core handles the execution of all instructions. By the time the core is tick'd, the main memory has already been initialized and loaded with the `elf` file. For the default pyArchSim, the core is instantiated as an object of the "`pyArchSim.proc.core.FiveStageInorderCore`" class. Currently, the syscalls are executed magically (i.e., syscall emulation). However, in future updates, it is planned for the syscall to be handled by a kernel. A core class must implement the following interfacing functions:
+The core handles the execution of all instructions. By the time the core is tick'd, the main memory has already been initialized and loaded with the `elf` file. For the default pyArchSim, the core is instantiated as an object of the "`pyArchSimLib.proc.core.FiveStageInorderCore`" class. Currently, the syscalls are executed magically (i.e., syscall emulation). However, in future updates, it is planned for the syscall to be handled by a kernel. A core class must implement the following interfacing functions:
 
 1. **`getExitStatus()`**: A function to return a tuple of the exit status and a return code. These values are set through syscals.
 2. **`roiFlag()`**: A function to return a boolean value representing whether the ROI flag has been set or not. The ROI flag represent whether an ROI region is being executed, which impacts statistics reporting for cycle count and instruction count. This flag is set through a syscall, currently.

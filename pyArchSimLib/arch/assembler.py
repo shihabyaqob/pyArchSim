@@ -96,6 +96,7 @@ class assembler():
       opcode    = inst_metadata['opcode'  ]
       funct     = inst_metadata['funct'   ]
       cond      = inst_metadata['cond'    ]
+      shamt     = inst_metadata['shamt'   ]
       code      = inst_metadata['code'    ]
 
       operands_lst = [x.strip() for x in operands .split(",")]
@@ -160,6 +161,9 @@ class assembler():
       #          This shows how MIPS is not that elegant after all, aye.
       if cond is not None:
         fields['rt'] = cond
+
+      if shamt is not None:
+        fields['shamt'] = shamt
 
       if code is not None:
         fields['rs'   ] = (code >> 15) & 0x1f

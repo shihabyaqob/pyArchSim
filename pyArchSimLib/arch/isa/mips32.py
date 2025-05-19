@@ -55,26 +55,29 @@ class mips32():
     ret['opcode'  ] = None
     ret['funct'   ] = None
     ret['cond'    ] = None
+    ret['shamt'   ] = None
     ret['code'    ] = None
 
     return ret
 
   @classmethod
-  def define_alu_1r2r(cls, opcode, funct=0):
+  def define_alu_1r2r(cls, opcode, funct=0, shamt=None):
     ret = cls.define_base()
     ret['syntax'  ] = 'd,s,t'
     ret['assemble'] = cls.rformat
     ret['opcode'  ] = opcode
     ret['funct'   ] = funct
+    ret['shamt'   ] = shamt
     return ret
 
   @classmethod
-  def define_alu_1r1r1s(cls, opcode, funct=0):
+  def define_alu_1r1r1s(cls, opcode, funct=0, shamt=None):
     ret = cls.define_base()
     ret['syntax'  ] = 'd,s,S'
     ret['assemble'] = cls.rformat
     ret['opcode'  ] = opcode
     ret['funct'   ] = funct
+    ret['shamt'   ] = shamt
     return ret
 
   @classmethod
@@ -136,13 +139,14 @@ class mips32():
     return ret
 
   @classmethod
-  def define_jump_1r(cls, opcode, funct=0, cond=None):
+  def define_jump_1r(cls, opcode, funct=0, cond=None, shamt=None):
     ret = cls.define_base()
     ret['syntax'  ] = 's'
     ret['assemble'] = cls.rformat
     ret['opcode'  ] = opcode
     ret['funct'   ] = funct
     ret['cond'    ] = cond
+    ret['shamt'   ] = shamt
     return ret
 
   @classmethod
@@ -284,6 +288,16 @@ class mips32():
     cls.__arch__['insts']['or'     ] = cls.define_alu_1r2r  (0x00, 0x25)
     cls.__arch__['insts']['xor'    ] = cls.define_alu_1r2r  (0x00, 0x26)
     cls.__arch__['insts']['nor'    ] = cls.define_alu_1r2r  (0x00, 0x27)
+
+    ## Multiplication/Division
+    cls.__arch__['insts']['mul'    ] = cls.define_alu_1r2r  (0x00, 0x18, shamt=0x02)
+    cls.__arch__['insts']['muh'    ] = cls.define_alu_1r2r  (0x00, 0x18, shamt=0x03)
+    cls.__arch__['insts']['mulu'   ] = cls.define_alu_1r2r  (0x00, 0x19, shamt=0x02)
+    cls.__arch__['insts']['muhu'   ] = cls.define_alu_1r2r  (0x00, 0x19, shamt=0x03)
+    cls.__arch__['insts']['div'    ] = cls.define_alu_1r2r  (0x00, 0x1a, shamt=0x02)
+    cls.__arch__['insts']['mod'    ] = cls.define_alu_1r2r  (0x00, 0x1a, shamt=0x03)
+    cls.__arch__['insts']['divu'   ] = cls.define_alu_1r2r  (0x00, 0x1b, shamt=0x02)
+    cls.__arch__['insts']['modu'   ] = cls.define_alu_1r2r  (0x00, 0x1b, shamt=0x03)
 
     ## ALU Reg-Imm
     cls.__arch__['insts']['addi'   ] = cls.define_alu_1r1r1i(0x08)

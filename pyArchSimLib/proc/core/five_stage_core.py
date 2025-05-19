@@ -282,7 +282,6 @@ class FiveStageInorderCore():
     # Done
     return mnemonic, isMem
 
-
   ### Decode stage itself
   def d(s):
     lt_buf = ''
@@ -331,6 +330,7 @@ class FiveStageInorderCore():
         dinst['rs'   ] = rs
         dinst['rt'   ] = rt
         dinst['rd'   ] = rd
+        dinst['shamt'] = shamt
         dinst['imm16'] = imm16
         dinst['imm26'] = imm26
         dinst['pc'   ] = pc
@@ -575,6 +575,7 @@ class FiveStageInorderCore():
         rt       = dinst['rt'      ]
         rt_data  = dinst['rt_data' ]
         rd       = dinst['rd'      ]
+        shamt    = dinst['shamt'   ]
         wb_data  = dinst['wb_data' ]
         wb_en    = dinst['wb_en'   ]
         imm16    = dinst['imm16'   ]

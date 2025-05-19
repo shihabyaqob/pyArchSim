@@ -74,17 +74,10 @@
 
    ```
 ---
-
 ## Cache Configuration
 
-* **Direct-Mapped** (`dm`) format:
-  \`\`\`dm\:SIZE\:LINE\_SZ\`\`\`
-  e.g. `dm:8192:64` for an 8 KB cache with 64 B lines.
-
-* **Set-Associative** (`sa`) format:
-  \`\`\`sa\:SIZE\:WAYS\:LINE\_SZ\`\`\`
-  e.g. `sa:16384:4:32` for a 16 KB, 4-way cache with 32 B lines.
-
+* **Direct-Mapped** (`dm`) format:  e.g. `dm:8192:64` for an 8 KB cache with 64 B lines.
+* **Set-Associative** (`sa`) format:  e.g. `sa:16384:4:32` for a 16 KB, 4-way cache with 32 B lines.
 * **Miss Penalty**: Adjust the constant `MISS_PENALTY` at the top of `direct_mapped.py` and `set_associative.py` to simulate additional memory latency (default: 10 cycles).
 ---
 ## Testing

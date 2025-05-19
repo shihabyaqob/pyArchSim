@@ -205,6 +205,12 @@ class assembler():
 
     return byte_array
 
+  def getElem(s, elem):
+    if isinstance(elem, str):
+      return '\'{}\''.format(elem)
+    else:
+      return '{}'.format(elem)
+
   def assemble(s, raw_asm):
     arch = s.arch
 
@@ -325,12 +331,12 @@ class assembler():
         # Process data
         isDataDirective = s.dtype_re.match(line)
         if isDataDirective:
-          line = []
           directive = isDataDirective.group(1).strip()
-          elems     = isDataDirective.group(2)
+          elems     = isDataDirective.group(2).strip()
 
-          elems_decl = [x.strip() for x in elems.split(',')]
-          line = [r'.' + directive + ' ' + elem for elem in elems_decl]
+          elems = elems.replace(r'"', r"'")
+          elems_decl = eval(r"[{}]".format(elems))
+          line = [r'.' + directive + ' ' + s.getElem(x) for x in elems_decl]
 
           allocSize = 0
           for alloc in line:

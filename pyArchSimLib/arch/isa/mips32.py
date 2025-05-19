@@ -322,7 +322,7 @@ class mips32():
     ## Jumps
     cls.__arch__['insts']['j'      ] = cls.define_jump_0r   (0x02)
     cls.__arch__['insts']['jal'    ] = cls.define_jump_0r   (0x03)
-    cls.__arch__['insts']['jr'     ] = cls.define_jump_1r   (0x00)
+    cls.__arch__['insts']['jr'     ] = cls.define_jump_1r   (0x00, 0x08)
 
     ## Syscall
     cls.__arch__['insts']['syscall'] = cls.define_syscall   (0x00, funct=0x0c, code=0x00)

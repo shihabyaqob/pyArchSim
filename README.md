@@ -1,6 +1,6 @@
 # pyArchSim
 
-***pyArchSim** is a cycle-accurate, five-stage MIPS pipeline simulator designed for educational and research purposes. This Python-based framework enables detailed exploration of microarchitectural concepts, including pipeline hazards, cache hierarchies, and memory latency effects.
+pyArchSim** is a cycle-accurate, five-stage MIPS pipeline simulator designed for educational and research purposes. This Python-based framework enables detailed exploration of microarchitectural concepts, including pipeline hazards, cache hierarchies, and memory latency effects.
 ---
 ## Features
 

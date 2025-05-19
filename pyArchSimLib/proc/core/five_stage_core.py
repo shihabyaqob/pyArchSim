@@ -237,6 +237,18 @@ class FiveStageInorderCore():
       elif funct == 0x07: mnemonic = 'srav'
       elif funct == 0x08: mnemonic = 'jr'
       elif funct == 0x0c: mnemonic = 'syscall'
+      elif funct == 0x18:
+        if   shamt == 0x02: mnemonic = 'mul'
+        elif shamt == 0x03: mnemonic = 'muh'
+      elif funct == 0x19:
+        if   shamt == 0x02: mnemonic = 'mulu'
+        elif shamt == 0x03: mnemonic = 'muhu'
+      elif funct == 0x1a:
+        if   shamt == 0x02: mnemonic = 'div'
+        elif shamt == 0x03: mnemonic = 'mod'
+      elif funct == 0x1b:
+        if   shamt == 0x02: mnemonic = 'divu'
+        elif shamt == 0x03: mnemonic = 'modu'
       elif funct == 0x20: mnemonic = 'add'
       elif funct == 0x21: mnemonic = 'addu'
       elif funct == 0x22: mnemonic = 'sub'
@@ -706,6 +718,59 @@ class FiveStageInorderCore():
           wb_data = (opD) & 0xffffffff
           wb_en = True
         elif mnemonic == 'srav' : pass
+
+        #================#
+        #  MUL/DIV/MOD   #
+        #================#
+        elif mnemonic == 'mul'  :
+          op1 = s.signed(rs_data)
+          op2 = s.signed(rt_data)
+          opD = op1 * op2
+          wb_data = (opD) & 0xffffffff
+          wb_en = True
+        elif mnemonic == 'muh'  :
+          op1 = s.signed(rs_data)
+          op2 = s.signed(rt_data)
+          opD = (op1 * op2) / (2 ** 32)
+          wb_data = (opD) & 0xffffffff
+          wb_en = True
+        elif mnemonic == 'mulu' :
+          op1 = rs_data
+          op2 = rt_data
+          opD = op1 * op2
+          wb_data = (opD) & 0xffffffff
+          wb_en = True
+        elif mnemonic == 'muhu' :
+          op1 = rs_data
+          op2 = rt_data
+          opD = (op1 * op2) / (2 ** 32)
+          wb_data = (opD) & 0xffffffff
+          wb_en = True
+
+        elif mnemonic == 'div'  :
+          op1 = s.signed(rs_data)
+          op2 = s.signed(rt_data)
+          opD = int(op1 / op2)
+          wb_data = (opD) & 0xffffffff
+          wb_en = True
+        elif mnemonic == 'mod'  :
+          op1 = s.signed(rs_data)
+          op2 = s.signed(rt_data)
+          opD = int(op1 % op2)
+          wb_data = (opD) & 0xffffffff
+          wb_en = True
+        elif mnemonic == 'divu' :
+          op1 = rs_data
+          op2 = rt_data
+          opD = int(op1 / op2)
+          wb_data = (opD) & 0xffffffff
+          wb_en = True
+        elif mnemonic == 'modu' :
+          op1 = rs_data
+          op2 = rt_data
+          opD = int(op1 % op2)
+          wb_data = (opD) & 0xffffffff
+          wb_en = True
 
         #================#
         #     Memory     #

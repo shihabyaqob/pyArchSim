@@ -342,5 +342,5 @@ class mips32():
     cls.__arch__['insts']['syscall'] = cls.define_syscall   (0x00, funct=0x0c, code=0x00)
 
     #cls.lst_dtypes = r'|'.join([r'\.' + x for x in cls.__arch__['dtypes']])
-    cls.lst_dtypes = r'|'.join([x for x in cls.__arch__['dtypes']])
+    cls.lst_dtypes = r'|'.join([r'\b{}\b'.format(x) for x in cls.__arch__['dtypes']])
     cls.dtype_re = re.compile(r'^\.({})(.*$)'.format(cls.lst_dtypes))

@@ -35,7 +35,7 @@ class assembler():
         num_elems = int(args)
       elif syntax == 'str':
         num_elems = len(eval(args))
-      elif syntax == 'strn':
+      elif syntax == 'strz':
         num_elems = len(eval(args)) + 1
       else:
         num_elems = len(args.split(","))
@@ -64,7 +64,7 @@ class assembler():
         data = eval(args).encode(encoding="utf-8")
         num_elems = len(data)
         byte_array = [x for x in data]
-      elif syntax == 'strn':
+      elif syntax == 'strz':
         data = eval(args).encode(encoding="utf-8")
         num_elems = len(data) + 1
         byte_array = [x for x in data]

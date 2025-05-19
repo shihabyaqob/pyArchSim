@@ -16,6 +16,23 @@ class assembler():
     s.arch = isa.arch()
     s.dtype_re = isa.dtype_re
 
+  def getAlignment(s, decl):
+    match = s.dtype_re.match(decl)
+
+    elem_sz   = 0
+    num_elems = 0
+
+    if match:
+      dtype = match.group(1).strip()
+      args  = match.group(2).strip()
+
+      dtype_def = s.arch['dtypes'][dtype]
+
+      elem_sz = dtype_def['elem_sz']
+      syntax  = dtype_def['syntax' ]
+
+    return elem_sz
+
   def getAllocSize(s, decl):
     match = s.dtype_re.match(decl)
 
@@ -23,8 +40,8 @@ class assembler():
     num_elems = 0
 
     if match:
-      dtype = match.group(1)
-      args  = match.group(2)
+      dtype = match.group(1).strip()
+      args  = match.group(2).strip()
 
       dtype_def = s.arch['dtypes'][dtype]
 
@@ -291,7 +308,7 @@ class assembler():
         # Process data
         isDataDirective = s.dtype_re.match(line)
         if isDataDirective:
-          elem_sz, num_elems = s.getAllocSize(line)
+          elem_sz = s.getAlignment(line)
           if addr % elem_sz != 0:
             addr = addr + (elem_sz - (addr % elem_sz))
             section['curr_addr'] = addr

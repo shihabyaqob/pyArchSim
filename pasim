@@ -1,152 +1,190 @@
 #!/usr/bin/env python3
-#=====================================================================
-# pyArchSim
-#=====================================================================
-#   A very light cycle-level Microarchitecture Simulator.
+# =============================================================================
+# File: pasim
+# Author: Khalid Al-Hawaj 26 April 2025
+# Modified by: Shihab Hasan 21 May 2025
 #
-# Author\ Khalid Al-Hawaj
-# Date  \ 26 April 2025
+# Description:
+#   Top-level driver for the five-stage pipeline simulator. Parses command-line
+#   arguments (including instruction/data cache configuration), assembles and
+#   loads a MIPS binary, instantiates the processor with I- and D-caches and
+#   multi-ported memory, runs the cycle-accurate core, and prints overall,
+#   ROI, and cache hit/miss statistics.
+# =============================================================================
+#--------------------
+# Modify Import Path
+#--------------------
+import argparse, os, sys
 
 #--------------------
 # Modify Import Path
 #--------------------
-
-# Modify Python path
-import argparse
-import os
-import sys
-
-# Constants
 ROOT_INDICATOR = '.__PYTHON_ROOT__'
-
 root_dir = os.path.dirname(os.path.abspath(__file__))
 while root_dir and root_dir != '/':
-  if os.path.exists(os.path.join(root_dir, ROOT_INDICATOR)):
-    sys.path.insert(0, root_dir)
-    break
-  root_dir = os.path.dirname(root_dir)
+    if os.path.exists(os.path.join(root_dir, ROOT_INDICATOR)):
+        sys.path.insert(0, root_dir)
+        break
+    root_dir = os.path.dirname(root_dir)
 
 if not os.path.exists(os.path.join(root_dir, ROOT_INDICATOR)):
-  print('ERROR: Cannot find the Python root')
+    print('ERROR: Cannot find the Python root')
 else:
-  print('INFO: Set root_dir to "{}"'.format(root_dir))
-
+    print(f'INFO: Set root_dir to "{root_dir}"')
 
 #--------------------
 # Imports from pyArchSim
 #--------------------
+from pyArchSimLib.arch.isa    import mips32
+from pyArchSimLib.arch        import assembler
+from pyArchSimLib.mem.main    import SimpleMultiportedMemory
+from pyArchSimLib.proc        import FiveStageInorderProcessor
+from pyArchSimLib.mem.cache   import NoCache, DirectMappedCache, SetAssociativeCache
 
-from pyArchSimLib.arch.isa import mips32
-from pyArchSimLib.arch     import assembler
-from pyArchSimLib.system   import BasicSystem
-
-# Setup argument parser
+#--------------------
+# Argument parser
+#--------------------
 parser = argparse.ArgumentParser(
            prog='pasim',
            description='An Educational Architectural Simulator Written in Python',
            epilog='By Khalid Al-Hawaj'
          )
-
 parser.add_argument('asm_file')
-parser.add_argument('-m', '--max-num-cycles', type=int, default=1000000)
-parser.add_argument('-l', '--linetrace', action='store_true')
-parser.add_argument('-f', '--linetrace-file', type=str)
-
-# Parse the arguments
+parser.add_argument('-m','--max-num-cycles',type=int,default=1_000_000)
+parser.add_argument('-l','--linetrace',action='store_true')
+parser.add_argument('-f','--linetrace-file',type=str)
+parser.add_argument('--icache',default='none',
+    help='none|dm:SIZE:LINE_SZ|sa:SIZE:WAYS:LINE_SZ')
+parser.add_argument('--dcache',default='none',
+    help='none|dm:SIZE:LINE_SZ|sa:SIZE:WAYS:LINE_SZ')
 args = parser.parse_args()
 
-# Linetracing
-ltEnable   = args.linetrace
-ltFilename = args.linetrace_file
-ltFile     = None
+#--------------------
+# Linetrace setup
+#--------------------
+ltEnable = args.linetrace
+ltFile   = open(args.linetrace_file,'w') if args.linetrace_file else None
+if ltEnable and not ltFile:
+    header = (
+        "+----------+------------+----------+----------+----------+----------+---------+---------+-----+\n"
+        "|   Cycle  |    Fetch   |  Decode  | Execute  |  Memory  | Complete | I_Cache | D_Cache | Mem |\n"
+        "+----------+------------+----------+----------+----------+----------+---------+---------+-----+"
+    )
+    print(header)
+#--------------------
+# Assemble & load
+#--------------------
+with open(args.asm_file) as f:
+    raw_asm = f.readlines()
+elf          = assembler(mips32).assemble(raw_asm)
 
-if ltFilename: ltFile = open(ltFilename, 'w')
+mem = SimpleMultiportedMemory(2)
+for sec in elf['sections'].values():
+    mem.write(sec['base_addr'], sec['bytes'], len(sec['bytes']))
 
-# System and assembler
-assemblerObj = assembler(mips32)
-system       = BasicSystem(ltEnable)
+#--------------------
+# Cache factory
+#--------------------
+def make_cache(cfg, port, lower):
+    if cfg.startswith('dm:'):
+        size, lsz = map(int, cfg.split(':')[1:])
+        return DirectMappedCache(port, size, lsz, lower)
+    if cfg.startswith('sa:'):
+        size, ways, lsz = map(int, cfg.split(':')[1:])
+        return SetAssociativeCache(port, size, ways, lsz, lower)
+    return NoCache(port)
 
-# Open the assembly file
-asmFilename = args.asm_file
-with open(asmFilename, 'r') as file:
-    raw_asm = file.readlines()
+ic = make_cache(args.icache, 0, mem)
+dc = make_cache(args.dcache, 1, mem)
 
-elf = assemblerObj.assemble(raw_asm)
-system.loader(elf)
+#--------------------
+# Processor setup
+#--------------------
+proc = FiveStageInorderProcessor(icache=ic, dcache=dc)
+proc.setMemCanReq   (mem.canReq)
+proc.setMemSendReq  (mem.sendReq)
+proc.setMemHasResp  (mem.hasResp)
+proc.setMemRecvResp (mem.recvResp)
+proc.setMemReadFunc (mem.read)
+proc.setMemWriteFunc(mem.write)
 
-max_num_cycle = args.max_num_cycles
-cycle         = 0
+#--------------------
+# Simulation Loop
+#--------------------
+cycle = tot_cycle = tot_inst = roi_cycle = roi_inst = 0
 
-tot_num_cycle = 0
-tot_num_insts = 0
+# format string for each row:
+row_fmt = (
+    "| {cycle:8d} "
+    "| {fetch:10s} "
+    "| {decode:8s} "
+    "| {execute:8s} "
+    "| {memory:8s} "
+    "| {complete:8s} "
+    "| {i_tr:6s} "
+    "| {d_tr:6s} "
+    "| {m_tr:3s} |"
+)
 
-roi_num_cycle = 0
-roi_num_insts = 0
+while cycle < args.max_num_cycles:
+    in_roi = proc.roiFlag()
+    proc.tick()
+    mem.tick()
 
-# Print header
-# hawajkm: we need a better way to do this
-top = '+----------+------------+----------+----------+----------+----------+----------+-----+\n'
-mid = '| Cycle    | Fetch      | Decode   | Execute  | Memory   | Complete |          | Mem |\n'
-bot = '+----------+------------+----------+----------+----------+----------+----------+-----+\n'
+    if in_roi:
+        roi_cycle += 1
+        if proc.instCompletionFlag(): roi_inst += 1
 
-if ltEnable:
-  if   ltFile:
-    ltFile.write(top)
-    ltFile.write(mid)
-    ltFile.write(bot)
-  else:
-    print(top, end='')
-    print(mid, end='')
-    print(bot, end='')
+    if proc.instCompletionFlag(): tot_inst += 1
+    tot_cycle += 1
 
-while cycle < max_num_cycle:
-  # Check stats before ticking
-  # hawajkm: again, we need to eliminate combinational propagation.
-  #          my idea is to just double-buffer! Version 2.00 will
-  #          include signal-level double-buffering.
+    if ltEnable:
+        # split pipeline trace into exactly 5 parts
+        # proc.linetrace() yields "FETCH | DECODE | EXEC | MEM | COMPLETE|
+        parts = [p.strip() for p in proc.linetrace().split('|')]
+        # pad to ensure 5 items:
+        while len(parts) < 5: parts.append('')
+        fetch, decode, execute, memory, complete = parts[:5]
 
-  # If ROI
-  isROI = system.roiFlag()
+        # get cache traces
+        i_tr = ic.linetrace()
+        d_tr = dc.linetrace()
+        m_tr = mem.linetrace()
 
-  system.tick()
-  linetrace = system.linetrace()
+        line = row_fmt.format(
+            cycle=cycle, fetch=fetch, decode=decode,
+            execute=execute, memory=memory, complete=complete,
+            i_tr=i_tr, d_tr=d_tr, m_tr=m_tr
+        )
 
-  if isROI:
-    roi_num_cycle += 1
-    if system.instCompletionFlag():
-      roi_num_insts += 1
+        if ltFile: ltFile.write(line + "\n")
+        else:      print(line)
 
-  tot_num_cycle += 1
-  if system.instCompletionFlag():
-    tot_num_insts += 1
-  
-  # Linetracing
-  if ltEnable:
-    lt_entry = '{: >10d} | {}\n'.format(cycle, linetrace)
+    exit_cond, _ = proc.getExitStatus()
+    if exit_cond:
+        print('\n + Overall Total Statistics:')
+        print(f'     - Total Cycles                  = {tot_cycle}')
+        print(f'     - Total Completed Instructions  = {tot_inst}')
+        print(f'     - Average IPC                   = {tot_inst/tot_cycle:.2f}')
+        print(f'     - Average CPI                   = {tot_cycle/tot_inst:.2f}\n')
+        if roi_cycle:
+            print(' + ROI Statistics:')
+            print(f'     - ROI Cycles                    = {roi_cycle}')
+            print(f'     - ROI Completed Instructions    = {roi_inst}')
+            print(f'     - ROI Average IPC               = {roi_inst/roi_cycle:.2f}')
+            print(f'     - ROI Average CPI               = {roi_cycle/roi_inst:.2f}\n')
 
-    if   ltFile: ltFile.write(lt_entry)
-    else       : print(lt_entry, end='')
+        # Cache stats (default to 0 if missing)
+        hits_ic = getattr(ic, 'hits', 0)
+        miss_ic = getattr(ic, 'misses', 0)
+        hits_dc = getattr(dc, 'hits', 0)
+        miss_dc = getattr(dc, 'misses', 0)
 
-  # Exit Status
-  exit_cond, exit_status = system.getExitStatus()
+        print(' + Cache Statistics:')
+        print(f'     - I-Cache Hits   = {hits_ic}')
+        print(f'     - I-Cache Misses = {miss_ic}')
+        print(f'     - D-Cache Hits   = {hits_dc}')
+        print(f'     - D-Cache Misses = {miss_dc}')
+        break
 
-  if exit_cond:
-    print('')
-    print(' + Overall Total Statistics:')
-    print('     - Total Number of Cycles = {}'.format(tot_num_cycle))
-    print('     - Total Number of Completed Instructions = {}'.format(tot_num_insts))
-    print('     - Average IPC = {:.2f}'.format(tot_num_insts / tot_num_cycle))
-    print('     - Average CPI = {:.2f}'.format(tot_num_cycle / tot_num_insts))
-    print('')
-    if roi_num_cycle > 0:
-      print(' + ROI Statistics:')
-      print('     - ROI Number of Cycles = {}'.format(roi_num_cycle))
-      print('     - ROI Number of Completed Instructions = {}'.format(roi_num_insts))
-      print('     - ROI Average IPC = {:.2f}'.format(roi_num_insts / roi_num_cycle))
-      print('     - ROI Average CPI = {:.2f}'.format(roi_num_cycle / roi_num_insts))
-      print('')
-
-    break
-
-  # Advance
-  cycle += 1
+    cycle += 1

@@ -799,7 +799,7 @@ class FiveStageInorderCore():
         elif mnemonic == 'beq'  :
           op1 = rs_data
           op2 = rt_data
-          tpc = pc + 4 + s.signed(s.sext(imm16))
+          tpc = pc + 4 + (s.signed(s.sext(imm16, 16)) << 2)
           bcond = op1 == op2
           br_type = 1
           outcome = 1 if bcond else 0
@@ -815,7 +815,7 @@ class FiveStageInorderCore():
         elif mnemonic == 'bltz' :
           op1 = rs_data
           op2 = rt_data
-          tpc = pc + 4 + s.signed(s.sext(imm16))
+          tpc = pc + 4 + (s.signed(s.sext(imm16, 16)) << 2)
           bcond = s.signed(op1) < 0
           br_type = 1
           outcome = 1 if bcond else 0
@@ -823,7 +823,7 @@ class FiveStageInorderCore():
         elif mnemonic == 'bgez' :
           op1 = rs_data
           op2 = rt_data
-          tpc = pc + 4 + s.signed(s.sext(imm16))
+          tpc = pc + 4 + (s.signed(s.sext(imm16, 16)) << 2)
           bcond = s.signed(op1) >= 0
           br_type = 1
           outcome = 1 if bcond else 0
@@ -831,7 +831,7 @@ class FiveStageInorderCore():
         elif mnemonic == 'blez' :
           op1 = rs_data
           op2 = rt_data
-          tpc = pc + 4 + s.signed(s.sext(imm16))
+          tpc = pc + 4 + (s.signed(s.sext(imm16, 16)) << 2)
           bcond = s.signed(op1) <= 0
           br_type = 1
           outcome = 1 if bcond else 0
@@ -839,7 +839,7 @@ class FiveStageInorderCore():
         elif mnemonic == 'bgtz' :
           op1 = rs_data
           op2 = rt_data
-          tpc = pc + 4 + s.signed(s.sext(imm16))
+          tpc = pc + 4 + (s.signed(s.sext(imm16, 16)) << 2)
           bcond = s.signed(op1) > 0
           br_type = 1
           outcome = 1 if bcond else 0

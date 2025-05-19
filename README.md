@@ -31,9 +31,9 @@
 ---
 ## Usage
 
-\`\`\`bash
-./pasim \<assembly\_file.asm> \[options]
-\`\`\`
+   ```bash
+   ./pasim \<assembly\_file.asm> \[options]
+   ```
 
 ### Key Options
 
@@ -44,9 +44,10 @@
 * `--dcache <cfg>`                : Data cache config (same format)
 
 **Example**: 4 KB, 64 B direct-mapped I-cache and 8 KB, 4-way, 32 B SA D-cache with linetrace:
-\`\`\`bash
-./pasim test.asm --linetrace --icache dm:4096:64 --dcache sa:8192:4:32
-\`\`\`
+   ```bash
+   ./pasim test.asm --linetrace --icache dm:4096:64 --dcache sa:8192:4:32
+
+   ```
 +----------+------------+----------+----------+----------+----------+---------+---------+-----+
 |   Cycle  |    Fetch   |  Decode  | Execute  |  Memory  | Complete | I_Cache | D_Cache | Mem |
 +----------+------------+----------+----------+----------+----------+---------+---------+-----+
